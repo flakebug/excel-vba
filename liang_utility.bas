@@ -168,11 +168,6 @@ Private Sub Beta_FillEmptyCellsWithPreviousRowValue()
     Next
 End Sub
 
-
-
-
-
-
 Sub S01_DirectoryAvailibilityCheck()
     'Author : Liang
     'Initial : 2021/7/3
@@ -242,9 +237,6 @@ Public Sub S02_Flat_Excel_Workbooks()
     wkb.Close
     MsgBox "Done", vbInformation
 End Sub
-
-
-
 
 Private Sub S03_EDC060_Link_Generator()
     'Author : Liang
@@ -330,11 +322,7 @@ Private Sub S03_EDC060_Link_Generator()
     wkb.Close
     Close_ProgressBar
     MsgBox "Done, " & lastrow & " rows processed", vbInformation
-    
-
 End Sub
-
-
 
 Private Sub S04_VDC050_Link_Generator()
     'Author : Liang
@@ -450,7 +438,4 @@ Private Sub S04_VDC050_Link_Generator()
     wkb.Close
     Close_ProgressBar
     MsgBox "Done, " & lastrow & " rows processed", vbInformation
-    
-
 End Sub
-
