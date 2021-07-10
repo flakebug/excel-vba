@@ -142,32 +142,6 @@ Private Sub Close_ProgressBar()
     frmProgress.Hide
 End Sub
 
-Private Function dirExists(s_directory As String) As Boolean
-    Dim oFSO As Object
-    Set oFSO = CreateObject("Scripting.FileSystemObject")
-    dirExists = oFSO.FolderExists(s_directory)
-End Function
-
-
-
-Private Sub Beta_FillEmptyCellsWithPreviousRowValue()
-    'Author : Liang
-    'Initial : 2021/7/7
-    'Latest update : 2021/7/7
-    'Description : if current cell is empty, then copy from previous cell
-    'Usage : select a column of cells, the first row must contains valid value
-    '           program will search the entire selection and fill with values
-    Dim cl As Range
-    Dim tval As String
-    For Each cl In Selection
-        If cl.Value = "" Then
-            cl.Value = tval
-        Else
-            tval = cl.Value
-        End If
-    Next
-End Sub
-
 Sub S01_DirectoryAvailibilityCheck()
     'Author : Liang
     'Initial : 2021/7/3
@@ -245,11 +219,7 @@ Private Sub S03_EDC060_Link_Generator()
     'Description : generate server link for EDC060.xlsm
     'Usage :
     
-    Dim Execution_Confirmation As Integer
-    Const subroutine_name As String = "S03_EDC060_Link_Generator"
-    Execution_Confirmation = MsgBox(subroutine_name & vbCrLf & "Proceed?", vbOKCancel + vbQuestion + vbDefaultButton2)
-    If Execution_Confirmation = vbCancel Then
-        MsgBox "Operation cancelled", vbInformation
+    If Not Execution_Confirmation("S03_EDC060_Link_Generator") Then
         Exit Sub
     End If
     
@@ -331,11 +301,7 @@ Private Sub S04_VDC050_Link_Generator()
     'Description : generate server link for VDC050.xlsm
     'Usage :
     
-    Dim Execution_Confirmation As Integer
-    Const subroutine_name As String = "S04_VDC050_Link_Generator"
-    Execution_Confirmation = MsgBox(subroutine_name & vbCrLf & "Proceed?", vbOKCancel + vbQuestion + vbDefaultButton2)
-    If Execution_Confirmation = vbCancel Then
-        MsgBox "Operation cancelled", vbInformation
+    If Not Execution_Confirmation("S04_VDC050_Link_Generator") Then
         Exit Sub
     End If
     
@@ -439,3 +405,35 @@ Private Sub S04_VDC050_Link_Generator()
     Close_ProgressBar
     MsgBox "Done, " & lastrow & " rows processed", vbInformation
 End Sub
+
+
+
+Public Sub S05_FillEmptyCellsWithPreviousRowValue()
+    'Author : Liang
+    'Initial : 2021/7/7
+    'Latest update : 2021/7/10
+    'Description : if current cell is empty, then copy from previous cell
+    'Usage : select a column of cells
+    '           program will search the entire selection and fill with values
+    
+    If Not Execution_Confirmation("S05_FillEmptyCellsWithPreviousRowValue") Then
+        Exit Sub
+    End If
+
+    If Selection.Columns.Count > 1 Then
+        MsgBox "You have selected more then one column" & vbCrLf & "Only one coloumn is allowed", vbExclamation
+        Exit Sub
+    End If
+    
+    Dim cl As Range
+    Dim tval As String
+    For Each cl In Selection
+        If cl.Value = "" Then
+            cl.Value = tval
+        Else
+            tval = cl.Value
+        End If
+    Next
+    MsgBox "Done", vbInformation
+End Sub
+
