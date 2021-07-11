@@ -1,9 +1,5 @@
 Attribute VB_Name = "liang_utility"
-Sub test()
-    Dim n As String
-    n = GetOpenFilename_Single("Excel (*.xlsx; *.xlsm),*.xlsx;*.xlsm", "Title")
-    MsgBox GetExtensionWithoutFilenameFromPath(n)
-End Sub
+
 
 Private Sub FlatWorksheet(wks As Worksheet)
     'Author : Liang
@@ -411,7 +407,7 @@ End Sub
 Public Sub S05_FillEmptyCellsWithPreviousRowValue()
     'Author : Liang
     'Initial : 2021/7/7
-    'Latest update : 2021/7/10
+    'Last update : 2021/7/10
     'Description : if current cell is empty, then copy from previous cell
     'Usage : select a column of cells
     '           program will search the entire selection and fill with values
@@ -436,4 +432,99 @@ Public Sub S05_FillEmptyCellsWithPreviousRowValue()
     Next
     MsgBox "Done", vbInformation
 End Sub
+
+
+
+Public Function S06_GetCTCIRevisionSequence(revision As String) As Long
+    'Author : Liang
+    'Initial : 2021/7/11
+    'Last update : 2021/7/11
+    'Description : compare CTCI drawing sequence number
+    'Usage :
+    'CTCI drawing revision format
+    'Example : 1Ac
+    '          |||
+    '          ||+Internal temporary revision
+    '          |+Internal revision
+    '          +Issue for Construction revision
+    'get the ascii code of each characters, and summary as number, then it's able to compare
+    Const rev_integer_base As Long = 100
+    
+    Dim t_rev As String
+    t_rev = UCase(revision)
+    Dim indx As Integer
+    Dim c_chk As String
+    For indx = 1 To Len(t_rev)
+        c_chk = Asc(Mid(t_rev, indx))
+        If Not ((c_chk >= 48 And c_chk <= 57) Or (c_chk >= 65 And c_chk <= 90)) Then
+            Err.Raise 2000, , "The revision number format is not correct" & vbCrLf & revision
+        End If
+    Next
+    
+    Dim result As Long
+    Dim revd1 As Long
+    Dim revd2 As Long
+    Dim revd3 As Long
+    Dim c1 As String
+    Dim c2 As String
+    Dim c3 As String
+    Select Case Len(t_rev)
+        Case 1
+            c1 = Mid(t_rev, 1, 1)
+            If IsNumeric(c1) Then
+                revd1 = Asc(c1) + rev_integer_base
+                result = revd1 * 1000000 + 0 * 1000 + 0 * 1
+            Else
+                revd1 = Asc(c1)
+                result = 0 * 1000000 + revd1 * 1000 + 0 * 1
+            End If
+            
+        Case 2
+            c1 = Mid(t_rev, 1, 1)
+            c2 = Mid(t_rev, 2, 1)
+            If IsNumeric(c1) Then
+                revd1 = Asc(c1) + rev_integer_base
+            Else
+                revd1 = Asc(c1)
+            End If
+            If IsNumeric(c2) Then
+                'suppose the revision number has two characters, but it is D+D or C+D, it's not right format
+                'D means digit, C means character
+                Err.Raise 2000, , "The revision number format is not correct" & vbCrLf & revision
+            Else
+                revd2 = Asc(c2)
+            End If
+            
+            If IsNumeric(c1) Then
+                result = revd1 * 1000000 + revd2 * 1000 + 0 * 1
+            Else
+                result = 0 * 100000 + revd1 * 1000 + revd2 * 1
+            End If
+            
+        Case 3
+            c1 = Mid(t_rev, 1, 1)
+            c2 = Mid(t_rev, 2, 1)
+            c3 = Mid(t_rev, 3, 1)
+            If IsNumeric(c1) Then
+                revd1 = Asc(c1) + rev_integer_base
+            Else
+                Err.Raise 2000, , "The revision number format is not correct" & vbCrLf & revision
+            End If
+            If IsNumeric(c2) Then
+                Err.Raise 2000, , "The revision number format is not correct" & vbCrLf & revision
+            Else
+                revd2 = Asc(c2)
+            End If
+            If IsNumeric(c3) Then
+                Err.Raise 2000, , "The revision number format is not correct" & vbCrLf & revision
+            Else
+                revd3 = Asc(c3)
+            End If
+            result = revd1 * 1000000 + revd2 * 1000 + revd3 * 1
+        Case Else
+            Err.Raise 1000, , "The revision string must equal or less than 3 characters" & vbCrLf & revision
+    End Select
+    
+    S06_GetCTCIRevisionSequence = result
+End Function
 
