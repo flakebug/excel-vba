@@ -172,7 +172,7 @@ Sub S01_DirectoryAvailibilityCheck()
 End Sub
 
 
-Public Sub S02_Flat_Excel_Workbooks()
+Public Sub S02_Flat_Excel_Workbook()
     'Author : Liang
     'Initial : 2021/7/5
     'Last update : 2021/7/5
@@ -208,7 +208,7 @@ Public Sub S02_Flat_Excel_Workbooks()
     MsgBox "Done", vbInformation
 End Sub
 
-Private Sub S03_EDC060_Link_Generator()
+Public Sub S03_EDC060_Link_Generator()
     'Author : Liang
     'Initial : 2021/7/6
     'Last update : 2021/7/9
@@ -220,8 +220,8 @@ Private Sub S03_EDC060_Link_Generator()
     End If
     
     Dim wkb As Workbook
-    'Set wkb = Workbooks.Open("\\192.168.198.4\filesrv\B-Master Drawing\B-01-SPF Control Log\EDC060.xlsm")
-    Set wkb = Workbooks.Open("d:\temp\EDC060.xlsm")
+    Set wkb = Workbooks.Open("\\192.168.198.4\filesrv\B-Master Drawing\B-01-SPF Control Log\EDC060.xlsm")
+    'Set wkb = Workbooks.Open("d:\temp\EDC060.xlsm")
    
     Dim wks As Worksheet
     Set wks = wkb.Worksheets("Report")
@@ -278,19 +278,20 @@ Private Sub S03_EDC060_Link_Generator()
     wks.Range("$A$4:$U$" & lastrow).AutoFilter Field:=21, Criteria1:="1"
     
     Application.DisplayAlerts = False
-    wkb.Worksheets("Setting").Delete
-    wkb.Worksheets("QueryParam").Delete
-    wkb.Worksheets("Data1").Delete
-    wkb.Worksheets("Data2").Delete
-    'wkb.SaveAs "\\192.168.198.4\filesrv\X-File Exchange\Liang\EI Report\XR01_EDC060\EDC060_" & report_date_str & ".xlsb", FileFormat:=xlExcel12
-    wkb.SaveAs "d:\temp\EDC060_" & report_date_str & ".xlsb", FileFormat:=xlExcel12
+    For Each wks In wkb.Worksheets
+        If wks.Name <> "Report" Then
+            wks.Delete
+        End If
+    Next
+    wkb.SaveAs "\\192.168.198.4\filesrv\X-File Exchange\Liang\EI Report\XR01_LinkedDrawingList\EDC060_" & report_date_str & ".xlsb", FileFormat:=xlExcel12
+    'wkb.SaveAs "d:\temp\EDC060_" & report_date_str & ".xlsb", FileFormat:=xlExcel12
     Application.DisplayAlerts = True
     wkb.Close
     Close_ProgressBar
     MsgBox "Done, " & lastrow & " rows processed", vbInformation
 End Sub
 
-Private Sub S04_VDC050_Link_Generator()
+Public Sub S04_VDC050_Link_Generator()
     'Author : Liang
     'Initial : 2021/7/9
     'Last update : 2021/7/9
@@ -302,8 +303,8 @@ Private Sub S04_VDC050_Link_Generator()
     End If
     
     Dim wkb As Workbook
-    'Set wkb = Workbooks.Open("\\192.168.198.4\filesrv\B-Master Drawing\B-01-SPF Control Log\EDC060.xlsm")
-    Set wkb = Workbooks.Open("d:\temp\VDC050.xlsm")
+    Set wkb = Workbooks.Open("\\192.168.198.4\filesrv\B-Master Drawing\B-01-SPF Control Log\VDC050.xlsm")
+    'Set wkb = Workbooks.Open("d:\temp\VDC050.xlsm")
    
     Dim wks As Worksheet
     Set wks = wkb.Worksheets("Report")
@@ -389,13 +390,13 @@ Private Sub S04_VDC050_Link_Generator()
     wks.Range("$A$5:$AG$" & lastrow).AutoFilter Field:=33, Criteria1:="1"
     
     Application.DisplayAlerts = False
-    wkb.Worksheets("Setting").Delete
-    wkb.Worksheets("QueryParam").Delete
-    wkb.Worksheets("Data1").Delete
-    wkb.Worksheets("Data2").Delete
-    wkb.Worksheets("¤u§@ªí1").Delete
-    'wkb.SaveAs "\\192.168.198.4\filesrv\X-File Exchange\Liang\EI Report\XR01_EDC060\EDC060_" & report_date_str & ".xlsb", FileFormat:=xlExcel12
-    wkb.SaveAs "d:\temp\VDC050_" & report_date_str & ".xlsb", FileFormat:=xlExcel12
+    For Each wks In wkb.Worksheets
+        If wks.Name <> "Report" Then
+            wks.Delete
+        End If
+    Next
+    wkb.SaveAs "\\192.168.198.4\filesrv\X-File Exchange\Liang\EI Report\XR01_LinkedDrawingList\VDC050_" & report_date_str & ".xlsb", FileFormat:=xlExcel12
+    'wkb.SaveAs "d:\temp\VDC050_" & report_date_str & ".xlsb", FileFormat:=xlExcel12
     Application.DisplayAlerts = True
     wkb.Close
     Close_ProgressBar
@@ -435,10 +436,11 @@ End Sub
 
 
 
+
 Public Function S06_GetCTCIRevisionSequence(revision As String) As Long
     'Author : Liang
     'Initial : 2021/7/11
-    'Last update : 2021/7/11
+    'Last update : 2021/8/14
     'Description : compare CTCI drawing sequence number
     'Usage :
     'CTCI drawing revision format
@@ -448,83 +450,95 @@ Public Function S06_GetCTCIRevisionSequence(revision As String) As Long
     '          |+Internal revision
     '          +Issue for Construction revision
     'get the ascii code of each characters, and summary as number, then it's able to compare
-    Const rev_integer_base As Long = 100
+    'Revision History :
+    '   2021/7/11 : initial
+    '   2021/8/14 : make correction of capital and non-capital revision character sequence number
+    
     
     Dim t_rev As String
-    t_rev = UCase(revision)
+    t_rev = revision
+    
+    'revision initial check
+    '===============================================================
     Dim indx As Integer
+    Dim c_raw As String
     Dim c_chk As String
+    Dim rev_format As String
+    rev_format = ""
     For indx = 1 To Len(t_rev)
-        c_chk = Asc(Mid(t_rev, indx))
-        If Not ((c_chk >= 48 And c_chk <= 57) Or (c_chk >= 65 And c_chk <= 90)) Then
+        c_raw = Mid(t_rev, indx, 1)
+        c_chk = Asc(c_raw)
+        If Not ((c_chk >= 48 And c_chk <= 57) Or (c_chk >= 65 And c_chk <= 90) Or (c_chk >= 97 And c_chk <= 122)) Then
             Err.Raise 2000, , "The revision number format is not correct" & vbCrLf & revision
         End If
+        If IsNumeric(c_raw) Then
+            rev_format = rev_format & "d"
+        Else
+            rev_format = rev_format & "c"
+        End If
     Next
+    '===============================================================
     
+    
+    'revision format detail verification
+    'for example, ctci revision format only
+    '    1, 1A, 1b, 1Ab, A, b, Ab
+    '===============================================================
+    Dim acceptable_rev_format As Variant
+    acceptable_rev_format = Array("d", "dc", "dcc", "c", "cc") 'd means digit, c means character
+    Dim rev_format_item As Variant
+    Dim rev_format_check As Boolean
+    rev_format_check = False
+    For Each rev_format_item In acceptable_rev_format
+        If rev_format = rev_format_item Then
+            rev_format_check = True
+        End If
+    Next
+    If rev_format_check = False Then
+        Err.Raise 2000, , "The revision number format is not correct" & vbCrLf & revision
+    End If
+    '===============================================================
+    
+    'revision format detail verification
+    '===============================================================
+    If rev_format = "dcc" Then
+        'if second character is not capital, or third character is capital, it is not valid format, raise error
+        If (Asc(Mid(t_rev, 2, 1)) > 90) Or (Asc(Mid(t_rev, 3, 1)) < 97) Then
+            Err.Raise 2000, , "The revision number format is not correct" & vbCrLf & revision
+        End If
+    End If
+    If rev_format = "cc" Then
+        'if first character is not capital, or second character is capital, it is not valid format, raise error
+        If (Asc(Mid(t_rev, 1, 1)) > 90) Or (Asc(Mid(t_rev, 2, 1)) < 97) Then
+            Err.Raise 2000, , "The revision number format is not correct" & vbCrLf & revision
+        End If
+    End If
+    '===============================================================
+    
+    'calculate final revision sequence number
+    '===============================================================
     Dim result As Long
-    Dim revd1 As Long
-    Dim revd2 As Long
-    Dim revd3 As Long
-    Dim c1 As String
-    Dim c2 As String
-    Dim c3 As String
-    Select Case Len(t_rev)
-        Case 1
-            c1 = Mid(t_rev, 1, 1)
-            If IsNumeric(c1) Then
-                revd1 = Asc(c1) + rev_integer_base
-                result = revd1 * 1000000 + 0 * 1000 + 0 * 1
-            Else
-                revd1 = Asc(c1)
-                result = 0 * 1000000 + revd1 * 1000 + 0 * 1
-            End If
-            
-        Case 2
-            c1 = Mid(t_rev, 1, 1)
-            c2 = Mid(t_rev, 2, 1)
-            If IsNumeric(c1) Then
-                revd1 = Asc(c1) + rev_integer_base
-            Else
-                revd1 = Asc(c1)
-            End If
-            If IsNumeric(c2) Then
-                'suppose the revision number has two characters, but it is D+D or C+D, it's not right format
-                'D means digit, C means character
-                Err.Raise 2000, , "The revision number format is not correct" & vbCrLf & revision
-            Else
-                revd2 = Asc(c2)
-            End If
-            
-            If IsNumeric(c1) Then
-                result = revd1 * 1000000 + revd2 * 1000 + 0 * 1
-            Else
-                result = 0 * 100000 + revd1 * 1000 + revd2 * 1
-            End If
-            
-        Case 3
-            c1 = Mid(t_rev, 1, 1)
-            c2 = Mid(t_rev, 2, 1)
-            c3 = Mid(t_rev, 3, 1)
-            If IsNumeric(c1) Then
-                revd1 = Asc(c1) + rev_integer_base
-            Else
-                Err.Raise 2000, , "The revision number format is not correct" & vbCrLf & revision
-            End If
-            If IsNumeric(c2) Then
-                Err.Raise 2000, , "The revision number format is not correct" & vbCrLf & revision
-            Else
-                revd2 = Asc(c2)
-            End If
-            If IsNumeric(c3) Then
-                Err.Raise 2000, , "The revision number format is not correct" & vbCrLf & revision
-            Else
-                revd3 = Asc(c3)
-            End If
-            result = revd1 * 1000000 + revd2 * 1000 + revd3 * 1
-        Case Else
-            Err.Raise 1000, , "The revision string must equal or less than 3 characters" & vbCrLf & revision
-    End Select
+    Dim c_weighted As Long
+    For indx = 1 To Len(t_rev)
+        c_raw = Mid(t_rev, indx, 1)
+        c_chk = Asc(c_raw)
+        If (c_chk >= 48 And c_chk <= 57) Then   'number
+            c_weighted = 100000 * c_chk 'the number's priority is highest, multiply to 100000
+        End If
+        If (c_chk >= 65 And c_chk <= 90) Then   'capital character
+            c_weighted = 1000 * c_chk
+        End If
+        If (c_chk >= 97 And c_chk <= 122) Then   'non capital character
+            c_weighted = c_chk  'the non-capital character priority is last, no multiplication
+        End If
+        Debug.Print c_weighted
+        result = result + c_weighted
+    Next
+    '===============================================================
     
     S06_GetCTCIRevisionSequence = result
+    
+
 End Function
+
 
