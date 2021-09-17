@@ -4,13 +4,32 @@ Attribute VB_Name = "liang_utility"
 Private Sub FlatWorksheet(wks As Worksheet)
     'Author : Liang
     'Initial : 2021/7/10
-    'Last update : 2021/7/10
+    'Last update : 2021/9/17
     'Description : copy all sheet and paste in values
+    '9/17 update :
+    '  added
+    '    wks.ShowAllData
+    '    to clear filter and able to copy and paste all data
+    '  cleared bugs
+    '    if worksheet doesn't contains filter
+    '      before : exception
+    '      after : skip the exception and continue
+    On Error GoTo errHandler
     wks.Activate
+    wks.ShowAllData
     wks.Cells.Select
     Selection.Copy
     Selection.PasteSpecial Paste:=xlPasteValues, Operation:=xlNone, SkipBlanks:=False, Transpose:=False
     wks.Cells(1, 1).Select
+    Exit Sub
+errHandler:
+    If Err.Number = 1004 Then
+        'if err.number = 1004 means that worksheet doesn't contains filter, just skip the error and no extra action required
+        Err.Clear
+    Else
+        Err.Raise Err.Number
+    End If
+    Resume Next
 End Sub
 
 Private Function GetExtensionWithoutFilenameFromPath(path As String) As String
@@ -23,10 +42,12 @@ End Function
 Private Function GetFilenameWithoutExtensionFromPath(path As String) As String
     'Author : Liang
     'Initial : 2021/7/10
-    'Last update : 2021/7/10
+    'Last update : 2021/9/17
+    '2021/9/17
+    '  change the InStr() to InStrRev()
     Dim filename As String
     filename = GetFilenameFromPath(path)
-    GetFilenameWithoutExtensionFromPath = Left(filename, InStr(filename, ".") - 1)
+    GetFilenameWithoutExtensionFromPath = Left(filename, InStrRev(filename, ".") - 1)
 End Function
 
 Private Function GetDirectoryFromPath(path As String) As String
@@ -175,15 +196,26 @@ End Sub
 Public Sub S02_Flat_Excel_Workbook()
     'Author : Liang
     'Initial : 2021/7/5
-    'Last update : 2021/7/5
+    'Last update : 2021/9/17
     'Description : transform excel formula cell to text cell, reduce the size and complexity
     'Usage : this subroutine only transform the cell for the filename consist with "_flatted"
+    '2021/9/17
+    '  updated
+    '    the openfile filter added .xlsb
     If Not Execution_Confirmation("S02_Flat_Excel_Workbooks") Then
         Exit Sub
     End If
     
+    Dim Status_DisplayAlerts  As Boolean
+    Dim Status_AskToUpdateLinks As Boolean
+    Status_DisplayAlerts = Application.DisplayAlerts
+    Status_AskToUpdateLinks = Application.AskToUpdateLinks
+    
+    Application.DisplayAlerts = False
+    Application.AskToUpdateLinks = False
+    
     Dim xlsx_filename As String
-    xlsx_filename = GetOpenFilename_Single("Excel (*.xlsx; *.xlsm),*.xlsx;*.xlsm", "Open Excel File")
+    xlsx_filename = GetOpenFilename_Single("Excel (*.xlsx; *.xlsm; *.xlsb),*.xlsx;*.xlsm;*.xlsb", "Open Excel File")
     If xlsx_filename = "" Then
         Exit Sub
     End If
@@ -203,9 +235,15 @@ Public Sub S02_Flat_Excel_Workbook()
     filename_str = GetFilenameWithoutExtensionFromPath(xlsx_filename)
     extension_str = GetExtensionWithoutFilenameFromPath(xlsx_filename)
     
-    wkb.SaveAs path_str & filename_str & "_flatted.xlsb", FileFormat:=xlExcel12
+    Dim final_full_path As String
+    final_full_path = path_str & "f_" & filename_str & ".xlsb"
+    
+    wkb.SaveAs final_full_path, FileFormat:=xlExcel12
     wkb.Close
     MsgBox "Done", vbInformation
+    
+    Application.DisplayAlerts = Status_DisplayAlerts
+    Application.AskToUpdateLinks = Status_AskToUpdateLinks
 End Sub
 
 Public Sub S03_EDC060_Link_Generator()
