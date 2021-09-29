@@ -83,6 +83,23 @@ Private Function Execution_Confirmation(procedure_name As String) As Boolean
     Execution_Confirmation = result
 End Function
 
+Private Function GetSaveAsFilename(InitialFileName, FileFilter As String, Title As String) As String
+    'Author : Liang
+    'Initial : 2021/7/10
+    'Last update : 2021/7/10
+    'Description : show open file dialog and return string array, single select
+    'Usage :
+    'FileFilter example : "Excel (*.xlsx; *.xlsm),*.xlsx;*.xlsm"
+    Dim result As Variant
+    result = Application.GetSaveAsFilename(InitialFileName:=InitialFileName, FileFilter:=FileFilter, Title:=Title)
+    If result = False Then
+        GetSaveAsFilename = ""
+    Else
+        GetSaveAsFilename = result
+    End If
+End Function
+
+
 Private Function GetOpenFilename_Single(FileFilter As String, Title As String) As String
     'Author : Liang
     'Initial : 2021/7/10
@@ -579,4 +596,57 @@ Public Function S06_GetCTCIRevisionSequence(revision As String) As Long
 
 End Function
 
+
+Public Sub S07_MatrixTableTransformation()
+    'Author : Liang
+    'Initial : 2021/9/29
+    'Last update : 2021/9/29
+    'Description : Transform visual table to data table
+    'Usage : Select entire table, with row title and column title
+    '        Program will ask the save path and export the content
+    
+    If Not Execution_Confirmation("S07_MatrixTableTransformation") Then
+        Exit Sub
+    End If
+
+    If Selection.Columns.Count <= 1 Then
+        MsgBox "You have selected less then two columns" & vbCrLf & "Minimum two columns allowed", vbCritical
+        Exit Sub
+    End If
+
+    If Selection.Rows.Count <= 1 Then
+        MsgBox "You have selected less then two rows" & vbCrLf & "Minimum two rows allowed", vbCritical
+        Exit Sub
+    End If
+    
+    Dim export_filename As String
+    export_filename = GetSaveAsFilename("S07_MTT_" & Format(Now, "YYYYMMDDHHmmSS"), "Text Files (*.txt), *.txt", "Export to File")
+    
+    Dim row_init As Long
+    Dim row_end As Long
+    Dim col_init As Long
+    Dim col_end As Long
+    
+    row_init = Selection.Row
+    col_init = Selection.Column
+    row_end = row_init + Selection.Rows.Count - 1
+    col_end = col_init + Selection.Columns.Count - 1
+    
+    
+    Open export_filename For Output As #1
+    
+    Dim rindx As Long
+    Dim cindx As Long
+    Dim output_row_content As String
+    For cindx = col_init + 1 To col_end
+        For rindx = row_init + 1 To row_end
+            output_row_content = ActiveSheet.Cells(rindx, col_init) & vbTab & ActiveSheet.Cells(row_init, cindx) & vbTab & ActiveSheet.Cells(rindx, cindx)
+            Print #1, output_row_content
+        Next
+    Next
+    
+    Close #1
+    
+    MsgBox "Done", vbInformation
+End Sub
 
